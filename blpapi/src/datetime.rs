@@ -1,11 +1,4 @@
-use crate::{
-    element::{Element, SetValue},
-    name::Name,
-    service::Service,
-    try_, Error,
-};
 use blpapi_sys::*;
-use std::ffi::CString;
 use std::os::raw::c_int;
 
 pub struct Datetime(pub(crate) blpapi_Datetime_t);
@@ -53,7 +46,8 @@ impl From<c_int> for DatetimeParts {
             BLPAPI_DATETIME_MINUTES_PART => DatetimeParts::Minutes,
             BLPAPI_DATETIME_SECONDS_PART => DatetimeParts::Seconds,
             BLPAPI_DATETIME_FRACSECONDS_PART => DatetimeParts::FracSeconds,
-            BLPAPI_DATETIME_MILLISECONDS_PART => DatetimeParts::Milliseconds,
+            // obsolete:
+            //BLPAPI_DATETIME_MILLISECONDS_PART => DatetimeParts::Milliseconds,
             BLPAPI_DATETIME_DATE_PART => DatetimeParts::Date,
             BLPAPI_DATETIME_TIME_PART => DatetimeParts::Time,
             BLPAPI_DATETIME_TIMEFRACSECONDS_PART => DatetimeParts::TimeFracSeconds,

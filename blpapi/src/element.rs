@@ -129,27 +129,27 @@ impl Element {
     }
 
     /// Append a new element with `value`
-    pub fn append<V: Value>(&mut self, value: V) -> Result<(), Error> {
+    pub fn append<V: SetValue>(&mut self, value: V) -> Result<(), Error> {
         value.append_to(self)
     }
 
     /// Get value at given index
-    pub fn get_at<V: Value>(&self, index: usize) -> Option<V> {
+    pub fn get_at<V: GetValue>(&self, index: usize) -> Option<V> {
         V::get_at(self, index)
     }
 
     /// Set value at given index
-    pub fn set_at<V: Value>(&mut self, index: usize, value: V) -> Result<(), Error> {
+    pub fn set_at<V: SetValue>(&mut self, index: usize, value: V) -> Result<(), Error> {
         value.set_at(self, index)
     }
 
     /// Set value from element defined by name
-    pub fn set<V: Value>(&mut self, name: &str, value: V) -> Result<(), Error> {
+    pub fn set<V: SetValue>(&mut self, name: &str, value: V) -> Result<(), Error> {
         value.set(self, name)
     }
 
     /// Set value from named element
-    pub fn set_named<V: Value>(&mut self, name: &Name, value: V) -> Result<(), Error> {
+    pub fn set_named<V: SetValue>(&mut self, name: &Name, value: V) -> Result<(), Error> {
         value.set_named(self, name)
     }
 }
@@ -171,9 +171,13 @@ unsafe fn opt_mut<'a>(res: c_int, ptr: *mut blpapi_Element_t) -> Option<&'a mut 
 }
 
 /// A trait to represent an Element value
-pub trait Value: Sized {
+pub trait GetValue: Sized {
     /// Get value from elements by index
     fn get_at(element: &Element, index: usize) -> Option<Self>;
+}
+
+/// A trait to represent an Element value
+pub trait SetValue: Sized {
     /// Set value from elements at index
     fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error>;
     /// Set value from element at name
@@ -190,7 +194,7 @@ pub trait Value: Sized {
 
 macro_rules! impl_value {
     ($ty:ty, $get_at:path, $set_at:path, $set:path) => {
-        impl Value for $ty {
+        impl GetValue for $ty {
             fn get_at(element: &Element, index: usize) -> Option<Self> {
                 unsafe {
                     let tmp = ptr::null_mut();
@@ -202,6 +206,8 @@ macro_rules! impl_value {
                     }
                 }
             }
+        }
+        impl SetValue for $ty {
             fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
                 unsafe {
                     let res = $set_at(element.0, self, index);
@@ -226,7 +232,7 @@ macro_rules! impl_value {
         }
     };
     ($ty:ty, $get_at:path, $set_at:path, $set:path, $from_bbg: expr, $to_bbg: expr) => {
-        impl Value for $ty {
+        impl GetValue for $ty {
             fn get_at(element: &Element, index: usize) -> Option<Self> {
                 unsafe {
                     let tmp = ptr::null_mut();
@@ -238,6 +244,8 @@ macro_rules! impl_value {
                     }
                 }
             }
+        }
+        impl SetValue for $ty {
             fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
                 unsafe {
                     let res = $set_at(element.0, $to_bbg(self), index);
@@ -302,14 +310,6 @@ impl_value!(
     |rust| if rust { 1 } else { 0 }
 );
 impl_value!(
-    String,
-    blpapi_Element_getValueAsString,
-    blpapi_Element_setValueString,
-    blpapi_Element_setElementString,
-    |bbg: *const c_char| CStr::from_ptr(bbg).to_string_lossy().into_owned(),
-    |rust: String| CString::new(rust).unwrap().as_ptr()
-);
-impl_value!(
     Name,
     blpapi_Element_getValueAsName,
     blpapi_Element_setValueFromName,
@@ -317,5 +317,42 @@ impl_value!(
     |bbg: *mut blpapi_Name_t| Name(bbg),
     |rust: Name| rust.0
 );
+
+impl_value!(
+    String,
+    blpapi_Element_getValueAsString,
+    blpapi_Element_setValueString,
+    blpapi_Element_setElementString,
+    |bbg: *const c_char| CStr::from_ptr(bbg).to_string_lossy().into_owned(),
+    |rust: String| CString::new(rust).unwrap().as_ptr()
+);
+
+impl<'a> SetValue for &'a str {
+    fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
+        let value = CString::new(self).unwrap().as_ptr();
+        unsafe {
+            let res = blpapi_Element_setValueString(element.0, value, index);
+            try_(res)
+        }
+    }
+    fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
+        let value = CString::new(self).unwrap().as_ptr();
+        unsafe {
+            let named_element = ptr::null();
+            let name = CString::new(name).unwrap();
+            let res =
+                blpapi_Element_setElementString(element.0, name.as_ptr(), named_element, value);
+            try_(res)
+        }
+    }
+    fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
+        let value = CString::new(self).unwrap().as_ptr();
+        unsafe {
+            let name = ptr::null();
+            let res = blpapi_Element_setElementString(element.0, name, named_element.0, value);
+            try_(res)
+        }
+    }
+}
 
 //TODO: Datetime

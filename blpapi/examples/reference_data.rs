@@ -6,7 +6,7 @@ pub fn main() -> Result<(), Error> {
     let port = args.next().unwrap_or("8194".to_owned()).parse().unwrap();
 
     println!("creating session");
-    let mut session = SessionOptions::new();
+    let mut session = SessionOptions::new()
         .with_server_host(&host)?
         .with_server_port(port)?
         .sync();
@@ -20,13 +20,13 @@ pub fn main() -> Result<(), Error> {
     let mut request = service.create_request("ReferenceDataRequest")?;
 
     // append securities
-    request.append("securities", "IBM US Equity".to_owned())?;
-    request.append("securities", "MSFT US Equity".to_owned())?;
-    request.append("securities", "3333 HK Equity".to_owned())?;
+    request.append("securities", "IBM US Equity")?;
+    request.append("securities", "MSFT US Equity")?;
+    request.append("securities", "3333 HK Equity")?;
 
     // append fields
-    request.append("fields", "PX_LAST".to_owned())?;
-    request.append("fields", "DS002".to_owned())?;
+    request.append("fields", "PX_LAST")?;
+    request.append("fields", "DS002")?;
 
     // send request and get it's newly created id
     println!("sending request");

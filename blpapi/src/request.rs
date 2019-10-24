@@ -1,5 +1,5 @@
 use crate::{
-    element::{Element, Value},
+    element::{Element, SetValue},
     name::Name,
     service::Service,
     try_, Error,
@@ -41,12 +41,12 @@ impl Request {
     }
 
     /// Append a new value to the existing inner Element sequence defined by name
-    pub fn append<V: Value>(&mut self, name: &str, value: V) -> Result<(), Error> {
+    pub fn append<V: SetValue>(&mut self, name: &str, value: V) -> Result<(), Error> {
         self.get_element_mut(name).ok_or(Error(0))?.append(value)
     }
 
     /// Append a new value to the existing inner Element sequence defined by name
-    pub fn append_named<V: Value>(&mut self, name: &Name, value: V) -> Result<(), Error> {
+    pub fn append_named<V: SetValue>(&mut self, name: &Name, value: V) -> Result<(), Error> {
         self.get_named_element_mut(name)
             .ok_or(Error(0))?
             .append(value)

@@ -1,4 +1,4 @@
-use crate::{name::Name, try_, Error};
+use crate::{datetime::Datetime, name::Name, try_, Error};
 use blpapi_sys::*;
 use std::{
     ffi::{CStr, CString},
@@ -350,6 +350,54 @@ impl<'a> SetValue for &'a str {
         unsafe {
             let name = ptr::null();
             let res = blpapi_Element_setElementString(element.0, name, named_element.0, value);
+            try_(res)
+        }
+    }
+}
+
+impl GetValue for Datetime {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        unsafe {
+            let tmp = ptr::null_mut();
+            let res = blpapi_Element_getValueAsDatetime(element.0, tmp, index);
+            if res == 0 {
+                Some(Datetime(*tmp))
+            } else {
+                None
+            }
+        }
+    }
+}
+
+impl<'a> SetValue for &'a Datetime {
+    fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
+        unsafe {
+            let res = blpapi_Element_setValueDatetime(element.0, &self.0 as *const _, index);
+            try_(res)
+        }
+    }
+    fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
+        unsafe {
+            let named_element = ptr::null();
+            let name = CString::new(name).unwrap();
+            let res = blpapi_Element_setElementDatetime(
+                element.0,
+                name.as_ptr(),
+                named_element,
+                &self.0 as *const _,
+            );
+            try_(res)
+        }
+    }
+    fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
+        unsafe {
+            let name = ptr::null();
+            let res = blpapi_Element_setElementDatetime(
+                element.0,
+                name,
+                named_element.0,
+                &self.0 as *const _,
+            );
             try_(res)
         }
     }

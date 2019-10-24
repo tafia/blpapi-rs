@@ -1,4 +1,5 @@
 pub mod correlation_id;
+pub mod datetime;
 pub mod element;
 pub mod event;
 pub mod message;

@@ -41,22 +41,18 @@ impl Session {
 
     /// Open service
     pub fn open_service(&mut self, service: &str) -> Result<(), Error> {
-        let service = CString::new(service).unwrap();
-        let res = unsafe { blpapi_Session_openService(self.ptr, service.as_ptr()) };
+        let service = CString::new(service).unwrap().as_ptr();
+        let res = unsafe { blpapi_Session_openService(self.ptr, service) };
         try_(res)
     }
 
     /// Get opened service
-    pub fn get_service(&self, service: &str) -> Option<Service> {
-        let name = CString::new(service).unwrap();
+    pub fn get_service(&self, service: &str) -> Result<Service, Error> {
+        let name = CString::new(service).unwrap().as_ptr();
         let mut service = ptr::null_mut();
-        let res =
-            unsafe { blpapi_Session_getService(self.ptr, &mut service as *mut _, name.as_ptr()) };
-        if res == 0 {
-            Some(Service(service))
-        } else {
-            None
-        }
+        let res = unsafe { blpapi_Session_getService(self.ptr, &mut service as *mut _, name) };
+        try_(res)?;
+        Ok(Service(service))
     }
 
     /// Send request
@@ -110,9 +106,9 @@ impl SessionSync {
     /// Request for next event, optionally waiting timeout_ms if there is no event
     pub fn next_event(&mut self, timeout_ms: Option<u32>) -> Result<Event, Error> {
         let mut event = ptr::null_mut();
+        let timeout = timeout_ms.unwrap_or(0);
         unsafe {
-            let res =
-                blpapi_Session_nextEvent(self.0.ptr, &mut event as *mut _, timeout_ms.unwrap_or(0));
+            let res = blpapi_Session_nextEvent(self.0.ptr, &mut event as *mut _, timeout);
             try_(res)?;
             Ok(Event(event))
         }

@@ -15,7 +15,7 @@ use std::os::raw::c_int;
 /// let session = SessionOptions::new()
 ///     .with_server_host("localhost").unwrap()
 ///     .with_server_port(8194).unwrap()
-///     .session_sync();
+///     .sync();
 /// ```
 pub struct SessionOptions(pub(crate) *mut blpapi_SessionOptions_t);
 
@@ -121,6 +121,6 @@ mod tests {
         let host = "localhost";
         let options = SessionOptions::new().with_server_host(host).unwrap();
         assert_eq!(host, options.server_host());
-        let session = options.session_sync();
+        let session = options.sync();
     }
 }

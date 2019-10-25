@@ -1,18 +1,29 @@
-use std::{env, path::PathBuf};
+use std::{env, fs::copy, path::{Path, PathBuf}};
 
 fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
         .canonicalize()
         .unwrap();
-    let src = project_dir
+    let vendor = project_dir
         .parent()
         .unwrap()
-        .join("vendor")
-        .join("blpapi_cpp_3.12.3.1-windows");
+        .join("vendor");
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
-    std::fs::copy(src.join("lib").join("blpapi3_64.dll"), out.join("blpapi3_64.dll")).unwrap();
-    std::fs::copy(src.join("lib").join("blpapi3_64.lib"), out.join("blpapi3_64.lib")).unwrap();
+    copy_libs(&vendor, &out);
 
     println!("cargo:rustc-link-search={}", out.display());
     println!("cargo:rustc-link-lib=blpapi3_64");
+}
+
+#[cfg(not(windows))]
+fn copy_libs(vendor: &Path, out: &Path) {
+    let lib_dir = vendor.join("blpapi_cpp_3.12.3.1-linux").join("Linux");
+    copy(lib_dir.join("libblpapi3_64.so"), out.join("libblpapi3_64.so")).unwrap();
+}
+
+#[cfg(windows)]
+fn copy_libs(vendor: &Path, out: &Path) {
+    let lib_dir = vendor.join("blpapi_cpp_3.12.3.1-windows").join("lib");
+    copy(lib_dir.join("blpapi3_64.dll"), out.join("blpapi3_64.dll")).unwrap();
+    copy(lib_dir.join("blpapi3_64.lib"), out.join("blpapi3_64.lib")).unwrap();
 }

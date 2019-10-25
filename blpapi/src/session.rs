@@ -137,7 +137,7 @@ mod tests {
         let mut session = SessionOptions::new()
             .with_server_host("localhost")?
             .with_server_port(8194)?
-            .session_sync();
+            .sync();
 
         //session.start()?;
         //session.open_service("//blp/refdata")?;

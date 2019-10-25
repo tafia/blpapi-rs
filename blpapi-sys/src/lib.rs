@@ -5,7 +5,7 @@ pub use bindings::*;
 
 #[test]
 fn test_historical() {
-    use std::ffi::{CString};
+    use std::ffi::CString;
 
     unsafe {
         let session_options = blpapi_SessionOptions_create();

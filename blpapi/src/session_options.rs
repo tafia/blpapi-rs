@@ -79,7 +79,7 @@ impl SessionOptions {
 
     /// Build a session, transfer ownership
     pub fn sync(self) -> SessionSync {
-        SessionSync::new(self)
+        SessionSync::from_options(self)
     }
 }
 

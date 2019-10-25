@@ -14,7 +14,7 @@ pub struct Session {
 
 impl Session {
     /// Create a new session
-    fn new(options: SessionOptions) -> Self {
+    fn from_options(options: SessionOptions) -> Self {
         //TODO: check if null values are ok!
         let handler = None;
         let dispatcher = ptr::null_mut();
@@ -98,9 +98,14 @@ impl Drop for Session {
 pub struct SessionSync(Session);
 
 impl SessionSync {
-    /// Create a new `SessionSync`
-    pub fn new(options: SessionOptions) -> Self {
-        SessionSync(Session::new(options))
+    /// Create a new `SessionSync` from a `SessionOptions`
+    pub fn from_options(options: SessionOptions) -> Self {
+        SessionSync(Session::from_options(options))
+    }
+
+    /// Create a new `SessionSync` with default options
+    pub fn new() -> Self {
+        Self::from_options(SessionOptions::new())
     }
 
     /// Request for next event, optionally waiting timeout_ms if there is no event

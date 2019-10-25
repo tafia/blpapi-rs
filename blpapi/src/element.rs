@@ -2,6 +2,7 @@ use crate::{datetime::Datetime, name::Name, try_, Error};
 use blpapi_sys::*;
 use std::{
     ffi::{CStr, CString},
+    marker::PhantomData,
     os::raw::{c_char, c_int},
     ptr,
 };
@@ -151,6 +152,31 @@ impl Element {
     /// Set value from named element
     pub fn set_named<V: SetValue>(&mut self, name: &Name, value: V) -> Result<(), Error> {
         value.set_named(self, name)
+    }
+
+    /// Get an element value
+    pub fn element_value<V: GetValue>(&self, element: &str) -> Option<V> {
+        self.get_element(element)?.value()
+    }
+
+    /// Get an element value
+    pub fn element_values<V: GetValue>(&self, element: &str) -> Option<Values<V>> {
+        self.get_element(element).map(|el| el.values())
+    }
+
+    /// Get current element value (index at 0)
+    pub fn value<V: GetValue>(&self) -> Option<V> {
+        self.get_at(0)
+    }
+
+    /// Get an iterator over the values
+    pub fn values<V: GetValue>(&self) -> Values<V> {
+        Values {
+            len: self.num_values(),
+            element: self,
+            i: 0,
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -403,4 +429,25 @@ impl<'a> SetValue for &'a Datetime {
     }
 }
 
-//TODO: Datetime
+/// An iterator over values
+pub struct Values<'a, V> {
+    element: &'a Element,
+    i: usize,
+    len: usize,
+    _phantom: PhantomData<V>,
+}
+
+impl<'a, V: GetValue> Iterator for Values<'a, V> {
+    type Item = V;
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len - self.i, Some(self.len - self.i))
+    }
+    fn next(&mut self) -> Option<V> {
+        if self.i == self.len {
+            return None;
+        }
+        let v = self.element.get_at(self.i);
+        self.i += 1;
+        v
+    }
+}

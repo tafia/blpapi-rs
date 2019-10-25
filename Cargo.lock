@@ -2,12 +2,12 @@
 # It is not intended for manual editing.
 [[package]]
 name = "blpapi"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
- "blpapi-sys 0.1.0",
+ "blpapi-sys 0.0.1",
 ]
 
 [[package]]
 name = "blpapi-sys"
-version = "0.1.0"
+version = "0.0.1"
 

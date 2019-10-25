@@ -1,6 +1,6 @@
 [package]
 name = "blpapi"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Johann Tuffe <johann.tuffe@three-stones.com>"]
 edition = "2018"
 
@@ -13,4 +13,4 @@ categories = ["api-bindings"]
 license = "MIT"
 
 [dependencies]
-blpapi-sys = { path = "../blpapi-sys" }
+blpapi-sys = { path = "../blpapi-sys", version = "0.0.1" }

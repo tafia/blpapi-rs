@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["Johann Tuffe <johann.tuffe@three-stones.com>"]
 edition = "2018"
 
+documentation = "https://docs.rs/blpapi-sys"
+repository = "https://github.com/tafia/blpapi-rs"
+
+readme = "../README.md"
+keywords = ["bloomberg", "bbg", "blpapi", "trading", "quant"]
+categories = ["external-ffi-bindings"]
+license = "MIT"
+
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

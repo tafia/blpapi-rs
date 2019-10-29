@@ -45,6 +45,11 @@ impl Element {
         unsafe { blpapi_Element_numValues(self.0) }
     }
 
+    /// Number of elements
+    pub fn num_elements(&self) -> usize {
+        unsafe { blpapi_Element_numElements(self.0) }
+    }
+
     /// Get element from its name
     pub fn get_element<'a>(&'a self, name: &str) -> Option<&'a Element> {
         unsafe {
@@ -176,6 +181,15 @@ impl Element {
             element: self,
             i: 0,
             _phantom: PhantomData,
+        }
+    }
+
+    /// Get an iterator over the elements
+    pub fn elements(&self) -> Elements {
+        Elements {
+            len: self.num_elements(),
+            element: self,
+            i: 0,
         }
     }
 }
@@ -395,6 +409,24 @@ impl GetValue for Datetime {
     }
 }
 
+impl<T: GetValue> GetValue for Option<T> {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        T::get_at(element, index).map(Some)
+    }
+}
+
+impl<T: GetValue> GetValue for Vec<T> {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        Some(element.values().skip(index).collect())
+    }
+}
+
+impl<T: GetValue + std::hash::Hash + Eq> GetValue for std::collections::HashSet<T> {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        Some(element.values().skip(index).collect())
+    }
+}
+
 impl<'a> SetValue for &'a Datetime {
     fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
         unsafe {
@@ -447,6 +479,28 @@ impl<'a, V: GetValue> Iterator for Values<'a, V> {
             return None;
         }
         let v = self.element.get_at(self.i);
+        self.i += 1;
+        v
+    }
+}
+
+/// An iterator over elements
+pub struct Elements<'a> {
+    element: &'a Element,
+    i: usize,
+    len: usize,
+}
+
+impl<'a> Iterator for Elements<'a> {
+    type Item = &'a Element;
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len - self.i, Some(self.len - self.i))
+    }
+    fn next(&mut self) -> Option<&'a Element> {
+        if self.i == self.len {
+            return None;
+        }
+        let v = self.element.get_element_at(self.i);
         self.i += 1;
         v
     }

@@ -1,2 +1,2 @@
 [workspace]
-members = [ "blpapi", "blpapi-sys"]
+members = [ "blpapi", "blpapi-sys", "blpapi-derive" ]

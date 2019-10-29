@@ -5,10 +5,14 @@ pub mod event;
 pub mod message;
 pub mod message_iterator;
 pub mod name;
+pub mod ref_data;
 pub mod request;
 pub mod service;
 pub mod session;
 pub mod session_options;
+
+pub use blpapi_derive::*;
+pub use ref_data::RefData;
 
 /// Error converted from `c_int`
 #[derive(Debug)]

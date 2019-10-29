@@ -1,8 +1,14 @@
 use crate::{
-    correlation_id::CorrelationId, event::Event, request::Request, service::Service,
-    session_options::SessionOptions, try_, Error,
+    correlation_id::CorrelationId,
+    event::{Event, EventType},
+    ref_data::RefData,
+    request::Request,
+    service::Service,
+    session_options::SessionOptions,
+    try_, Error,
 };
 use blpapi_sys::*;
+use std::collections::HashMap;
 use std::{ffi::CString, ptr};
 
 pub struct Session {
@@ -117,6 +123,41 @@ impl SessionSync {
             try_(res)?;
             Ok(Event(event))
         }
+    }
+
+    /// Get reference data
+    pub fn ref_data<I, R>(&mut self, securities: I) -> Result<HashMap<String, R>, Error>
+    where
+        I: Iterator,
+        I::Item: AsRef<str>,
+        R: RefData,
+    {
+        let service = self.get_service("//blp/refdata")?;
+
+        // build request
+        let mut request = service.create_request("ReferenceDataRequest")?;
+        for security in securities {
+            request.append("securities", security.as_ref())?;
+        }
+        for field in R::FIELDS {
+            request.append("fields", *field)?;
+        }
+
+        // send request
+        let _id = self.send(request, None)?;
+        let mut event_type = EventType::Unknown;
+        let mut securities: HashMap<String, R> = HashMap::new();
+        while event_type != EventType::Response {
+            let event = self.next_event(None)?;
+            for message in event.messages() {
+                let security = securities.entry(message.name()).or_default();
+                for element in message.elements() {
+                    security.on_field(&element.name(), element);
+                }
+            }
+            event_type = event.event_type();
+        }
+        Ok(securities)
     }
 }
 

@@ -1,19 +1,23 @@
 [package]
-name = "blpapi-sys"
-version = "0.0.1"
+name = "blpapi-derive"
+version = "0.1.0"
 authors = ["Johann Tuffe <johann.tuffe@three-stones.com>"]
 edition = "2018"
 
-documentation = "https://docs.rs/blpapi-sys"
+documentation = "https://docs.rs/blpapi"
 repository = "https://github.com/tafia/blpapi-rs"
 
 readme = "../README.md"
-keywords = ["bloomberg", "bbg", "blpapi", "trading", "quant"]
-categories = ["external-ffi-bindings"]
+keywords = ["bloomberg", "bbg", "blpapi", "trading", "quant", "derive"]
+categories = ["api-bindings"]
 license = "MIT"
 
-build = "build.rs"
+[lib]
+proc-macro = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+proc-macro2 = "1.0"
+syn = "1.0"
+quote = "1.0"

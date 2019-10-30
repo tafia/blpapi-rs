@@ -3,9 +3,7 @@ extern crate proc_macro;
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
-use syn::{
-    parse_macro_input, parse_quote, Data, DeriveInput, Fields, GenericParam, Generics, Index,
-};
+use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, GenericParam, Generics};
 
 #[proc_macro_derive(RefData)]
 pub fn derive_ref_data(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -41,6 +39,7 @@ fn add_trait_bounds(mut generics: Generics) -> Generics {
     generics
 }
 
+/// fn on_field(...) {...}
 fn on_field(data: &Data) -> TokenStream {
     match data {
         Data::Struct(ref data) => match data.fields {
@@ -69,6 +68,7 @@ fn on_field(data: &Data) -> TokenStream {
     }
 }
 
+/// const FIELDS = ...
 fn fields(data: &Data) -> TokenStream {
     match data {
         Data::Struct(ref data) => match data.fields {

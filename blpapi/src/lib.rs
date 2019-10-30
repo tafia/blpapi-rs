@@ -11,6 +11,7 @@ pub mod service;
 pub mod session;
 pub mod session_options;
 
+#[cfg(feature = "derive")]
 pub use blpapi_derive::*;
 pub use ref_data::RefData;
 

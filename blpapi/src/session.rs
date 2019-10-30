@@ -1,6 +1,8 @@
 use crate::{
     correlation_id::CorrelationId,
+    element::Element,
     event::{Event, EventType},
+    name::Name,
     ref_data::RefData,
     request::Request,
     service::Service,
@@ -20,6 +22,15 @@ pub struct Session {
     // keep a handle of the options (not sure if it should be droped or not)
     //_options: SessionOptions,
     correlation_count: u64,
+
+    // names stored here to be created once
+    // FIXME: should be a const or lazy_static
+    security_data: Name,
+    security: Name,
+    field_data: Name,
+    session_terminated: Name,
+    session_startup_failure: Name,
+    security_error: Name,
 }
 
 impl Session {
@@ -34,6 +45,12 @@ impl Session {
             ptr,
             //_options: options,
             correlation_count: 0,
+            security_data: Name::new("securityData"),
+            security: Name::new("security"),
+            field_data: Name::new("fieldData"),
+            session_terminated: Name::new("SesssionTerminated"),
+            session_startup_failure: Name::new("SessionStartupFailure"),
+            security_error: Name::new("securityError"),
         }
     }
 
@@ -113,9 +130,12 @@ impl SessionSync {
         SessionSync(Session::from_options(options))
     }
 
-    /// Create a new `SessionSync` with default options
-    pub fn new() -> Self {
-        Self::from_options(SessionOptions::new())
+    /// Create a new `SessionSync` with default options and open refdata service
+    pub fn new() -> Result<Self, Error> {
+        let mut session = Self::from_options(SessionOptions::new());
+        session.start()?;
+        session.open_service("//blp/refdata")?;
+        Ok(session)
     }
 
     /// Request for next event, optionally waiting timeout_ms if there is no event
@@ -188,16 +208,47 @@ impl SessionSync {
 
                 // send request
                 let _id = self.send(request, None)?;
-                let mut event_type = EventType::Unknown;
-                while event_type != EventType::Response {
+                loop {
                     let event = self.next_event(None)?;
-                    for message in event.messages() {
-                        let security = ref_data.entry(message.name()).or_default();
-                        for element in message.elements() {
-                            security.on_field(&element.name(), element);
+                    let event_type = event.event_type();
+                    match event_type {
+                        EventType::PartialResponse | EventType::Response => {
+                            for message in event.messages() {
+                                for security in message
+                                    .get_named_element(&self.security_data)
+                                    .into_iter()
+                                    .flat_map(|securities| securities.values::<Element>())
+                                {
+                                    let ticker = security
+                                        .get_named_element(&self.security)
+                                        .and_then(|s| s.get_at(0))
+                                        .unwrap_or_else(|| String::new());
+                                    if security.has_named_element(&self.security_error) {
+                                        break;
+                                    }
+                                    let entry = ref_data.entry(ticker).or_default();
+                                    for field in security
+                                        .get_named_element(&self.field_data)
+                                        .into_iter()
+                                        .flat_map(|fields| fields.elements())
+                                    {
+                                        entry.on_field(&field.name(), field);
+                                    }
+                                }
+                            }
+                            if event_type == EventType::Response {
+                                break;
+                            }
                         }
+                        EventType::SessionStatus => {
+                            if event.messages().map(|m| m.message_type()).any(|m| {
+                                m == self.session_terminated || m == self.session_startup_failure
+                            }) {
+                                break;
+                            }
+                        }
+                        _ => (),
                     }
-                    event_type = event.event_type();
                 }
             }
         }

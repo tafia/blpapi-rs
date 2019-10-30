@@ -421,6 +421,20 @@ impl<T: GetValue> GetValue for Vec<T> {
     }
 }
 
+impl GetValue for Element {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        unsafe {
+            let tmp = ptr::null_mut();
+            let res = blpapi_Element_getValueAsElement(element.0, tmp, index);
+            if res == 0 {
+                Some(Element(*tmp))
+            } else {
+                None
+            }
+        }
+    }
+}
+
 impl<T: GetValue + std::hash::Hash + Eq> GetValue for std::collections::HashSet<T> {
     fn get_at(element: &Element, index: usize) -> Option<Self> {
         Some(element.values().skip(index).collect())

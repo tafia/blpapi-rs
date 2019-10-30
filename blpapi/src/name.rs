@@ -47,3 +47,9 @@ impl<S: AsRef<str>> PartialEq<S> for Name {
         unsafe { blpapi_Name_equalsStr(self.0, s) != 0 }
     }
 }
+
+impl PartialEq<Name> for Name {
+    fn eq(&self, other: &Name) -> bool {
+        self.0 == other.0 && self.len() == other.len()
+    }
+}

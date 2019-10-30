@@ -11,10 +11,14 @@ use blpapi_sys::*;
 use std::collections::HashMap;
 use std::{ffi::CString, ptr};
 
+const MAX_PENDING_REQUEST: usize = 1024;
+const MAX_REFDATA_FIELDS: usize = 400;
+const MAX_HISTDATA_FIELDS: usize = 25;
+
 pub struct Session {
     ptr: *mut blpapi_Session_t,
     // keep a handle of the options (not sure if it should be droped or not)
-    _options: SessionOptions,
+    //_options: SessionOptions,
     correlation_count: u64,
 }
 
@@ -28,7 +32,7 @@ impl Session {
         let ptr = unsafe { blpapi_Session_create(options.0, handler, dispatcher, user_data) };
         Session {
             ptr,
-            _options: options,
+            //_options: options,
             correlation_count: 0,
         }
     }
@@ -125,39 +129,79 @@ impl SessionSync {
         }
     }
 
-    /// Get reference data
+    /// Get reference data for `RefData` items
+    ///
+    /// # Note
+    /// For ease of use, you can activate the **derive** feature.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")]
+    /// # {
+    /// use blpapi::{RefData, session::SessionSync};
+    ///
+    /// // use the **derive** feature to automatically convert field names into bloomberg fields
+    /// #[derive(Default, RefData)]
+    /// struct EquityData {
+    ///     ticker: String,
+    ///     crncy: String,
+    ///     market_status: Option<String>,
+    /// }
+    ///
+    /// let mut session = SessionSync::new();
+    /// let securities: &[&str] = &[ /* list of security tickers */ ];
+    ///
+    /// let maybe_equities = session.ref_data::<_, EquityData>(securities);
+    /// # }
+    /// ```
     pub fn ref_data<I, R>(&mut self, securities: I) -> Result<HashMap<String, R>, Error>
     where
-        I: Iterator,
+        I: IntoIterator,
         I::Item: AsRef<str>,
         R: RefData,
     {
         let service = self.get_service("//blp/refdata")?;
+        let mut ref_data: HashMap<String, R> = HashMap::new();
+        let mut securities = securities.into_iter();
 
-        // build request
-        let mut request = service.create_request("ReferenceDataRequest")?;
-        for security in securities {
-            request.append("securities", security.as_ref())?;
-        }
-        for field in R::FIELDS {
-            request.append("fields", *field)?;
-        }
+        // split request as necessary to comply with bloomberg size limitations
+        for fields in R::FIELDS.chunks(MAX_REFDATA_FIELDS) {
+            loop {
+                // create new request
+                let mut request = service.create_request("ReferenceDataRequest")?;
 
-        // send request
-        let _id = self.send(request, None)?;
-        let mut event_type = EventType::Unknown;
-        let mut securities: HashMap<String, R> = HashMap::new();
-        while event_type != EventType::Response {
-            let event = self.next_event(None)?;
-            for message in event.messages() {
-                let security = securities.entry(message.name()).or_default();
-                for element in message.elements() {
-                    security.on_field(&element.name(), element);
+                // add next batch of securities and exit loop if empty
+                let mut is_empty = true;
+                for security in securities.by_ref().take(MAX_PENDING_REQUEST / fields.len()) {
+                    request.append("securities", security.as_ref())?;
+                    is_empty = false;
+                }
+                if is_empty {
+                    break;
+                }
+
+                // add fields
+                for field in fields {
+                    request.append("fields", *field)?;
+                }
+
+                // send request
+                let _id = self.send(request, None)?;
+                let mut event_type = EventType::Unknown;
+                while event_type != EventType::Response {
+                    let event = self.next_event(None)?;
+                    for message in event.messages() {
+                        let security = ref_data.entry(message.name()).or_default();
+                        for element in message.elements() {
+                            security.on_field(&element.name(), element);
+                        }
+                    }
+                    event_type = event.event_type();
                 }
             }
-            event_type = event.event_type();
         }
-        Ok(securities)
+        Ok(ref_data)
     }
 }
 

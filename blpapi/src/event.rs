@@ -57,11 +57,3 @@ impl From<c_int> for EventType {
         }
     }
 }
-
-impl Drop for Event {
-    fn drop(&mut self) {
-        unsafe {
-            blpapi_Event_release(self.0);
-        }
-    }
-}

@@ -31,23 +31,19 @@ impl Request {
     }
 
     /// Convert the request to an Element
-    pub fn as_element(&self) -> &Element {
-        unsafe { Element::from_raw(self.elements) }
-    }
-
-    /// Convert the request to an Element
-    pub fn as_element_mut(&mut self) -> &mut Element {
-        unsafe { Element::from_raw_mut(self.elements) }
+    pub fn element(&self) -> Element {
+        Element { ptr: self.elements }
     }
 
     /// Append a new value to the existing inner Element sequence defined by name
     pub fn append<V: SetValue>(&mut self, name: &str, value: V) -> Result<(), Error> {
-        self.get_element_mut(name).ok_or(Error(0))?.append(value)
+        let mut element = self.element().get_element(name).ok_or(Error(0))?;
+        element.append(value)
     }
 
     /// Append a new value to the existing inner Element sequence defined by name
     pub fn append_named<V: SetValue>(&mut self, name: &Name, value: V) -> Result<(), Error> {
-        self.get_named_element_mut(name)
+        self.element().get_named_element(name)
             .ok_or(Error(0))?
             .append(value)
     }
@@ -56,18 +52,5 @@ impl Request {
 impl Drop for Request {
     fn drop(&mut self) {
         unsafe { blpapi_Request_destroy(self.ptr) }
-    }
-}
-
-impl std::ops::Deref for Request {
-    type Target = Element;
-    fn deref(&self) -> &Element {
-        self.as_element()
-    }
-}
-
-impl std::ops::DerefMut for Request {
-    fn deref_mut(&mut self) -> &mut Element {
-        self.as_element_mut()
     }
 }

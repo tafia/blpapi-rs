@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 blpapi = { path = "../..", features = [ "derive" ] }
+env_logger = "0.7.1"

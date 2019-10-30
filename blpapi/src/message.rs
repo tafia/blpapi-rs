@@ -51,14 +51,19 @@ impl<'a> Message<'a> {
             }
         }
     }
-}
 
-impl<'a> std::ops::Deref for Message<'a> {
-    type Target = Element;
-    fn deref(&self) -> &Element {
-        unsafe { Element::from_raw(self.elements) }
+    /// Get corresponding element
+    pub fn element(&self) -> Element {
+        Element { ptr: self.elements }
     }
 }
+
+//impl<'a> std::ops::Deref for Message<'a> {
+//    type Target = Element;
+//    fn deref(&self) -> &Element {
+//        unsafe { &Element { ptr: self.elements } }
+//    }
+//}
 
 //TODO:
 //check if we must release it.

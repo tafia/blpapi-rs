@@ -7,8 +7,8 @@ pub struct Name(pub(crate) *mut blpapi_Name_t);
 impl Name {
     /// Create a new name
     pub fn new(s: &str) -> Self {
-        let name = CString::new(s).unwrap().as_ptr();
-        unsafe { Name(blpapi_Name_create(name)) }
+        let name = CString::new(s).unwrap();
+        unsafe { Name(blpapi_Name_create(name.as_ptr())) }
     }
 
     /// Name length
@@ -43,13 +43,28 @@ impl Clone for Name {
 
 impl<S: AsRef<str>> PartialEq<S> for Name {
     fn eq(&self, other: &S) -> bool {
-        let s = CString::new(other.as_ref()).unwrap().as_ptr();
-        unsafe { blpapi_Name_equalsStr(self.0, s) != 0 }
+        let s = CString::new(other.as_ref()).unwrap();
+        unsafe { blpapi_Name_equalsStr(self.0, s.as_ptr()) != 0 }
     }
 }
 
 impl PartialEq<Name> for Name {
     fn eq(&self, other: &Name) -> bool {
         self.0 == other.0 && self.len() == other.len()
+    }
+}
+
+impl std::string::ToString for Name {
+    fn to_string(&self) -> String {
+        unsafe { 
+            let ptr = blpapi_Name_string(self.0);
+            CStr::from_ptr(ptr).to_string_lossy().into_owned()
+        }
+    }
+}
+
+impl std::fmt::Debug for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Name: '{}'", self.to_string())
     }
 }

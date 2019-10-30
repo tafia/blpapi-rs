@@ -15,7 +15,7 @@ use std::{ffi::CString, ptr};
 
 const MAX_PENDING_REQUEST: usize = 1024;
 const MAX_REFDATA_FIELDS: usize = 400;
-const MAX_HISTDATA_FIELDS: usize = 25;
+//const MAX_HISTDATA_FIELDS: usize = 25;
 
 pub struct Session {
     ptr: *mut blpapi_Session_t,
@@ -68,16 +68,16 @@ impl Session {
 
     /// Open service
     pub fn open_service(&mut self, service: &str) -> Result<(), Error> {
-        let service = CString::new(service).unwrap().as_ptr();
-        let res = unsafe { blpapi_Session_openService(self.ptr, service) };
+        let service = CString::new(service).unwrap();
+        let res = unsafe { blpapi_Session_openService(self.ptr, service.as_ptr()) };
         try_(res)
     }
 
     /// Get opened service
     pub fn get_service(&self, service: &str) -> Result<Service, Error> {
-        let name = CString::new(service).unwrap().as_ptr();
+        let name = CString::new(service).unwrap();
         let mut service = ptr::null_mut();
-        let res = unsafe { blpapi_Session_getService(self.ptr, &mut service as *mut _, name) };
+        let res = unsafe { blpapi_Session_getService(self.ptr, &mut service as *mut _, name.as_ptr()) };
         try_(res)?;
         Ok(Service(service))
     }
@@ -213,26 +213,22 @@ impl SessionSync {
                     let event_type = event.event_type();
                     match event_type {
                         EventType::PartialResponse | EventType::Response => {
-                            for message in event.messages() {
-                                for security in message
-                                    .get_named_element(&self.security_data)
-                                    .into_iter()
-                                    .flat_map(|securities| securities.values::<Element>())
-                                {
-                                    let ticker = security
-                                        .get_named_element(&self.security)
-                                        .and_then(|s| s.get_at(0))
-                                        .unwrap_or_else(|| String::new());
-                                    if security.has_named_element(&self.security_error) {
-                                        break;
-                                    }
-                                    let entry = ref_data.entry(ticker).or_default();
-                                    for field in security
-                                        .get_named_element(&self.field_data)
-                                        .into_iter()
-                                        .flat_map(|fields| fields.elements())
-                                    {
-                                        entry.on_field(&field.name(), field);
+                            for message in event.messages().map(|m| m.element()) {
+                                if let Some(securities) = message.get_named_element(&self.security_data) {
+                                    for security in securities.values::<Element>() {
+                                        let ticker = security
+                                            .get_named_element(&self.security)
+                                            .and_then(|s| s.get_at::<String>(0))
+                                            .unwrap_or_else(|| String::new());
+                                        if security.has_named_element(&self.security_error) {
+                                            break;
+                                        }
+                                        let entry = ref_data.entry(ticker).or_default();
+                                        if let Some(fields) = security.get_named_element(&self.field_data) {
+                                            for field in fields.elements() {
+                                                entry.on_field(&field.name(), &field);
+                                            }
+                                        }
                                     }
                                 }
                             }

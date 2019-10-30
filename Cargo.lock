@@ -38,6 +38,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "reference_data"
+version = "0.1.0"
+dependencies = [
+ "blpapi 0.0.1",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,11 @@
+[package]
+name = "historical_data"
+version = "0.1.0"
+authors = ["Johann Tuffe <tafia973@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+blpapi = { path = "../..", features = [ "derive", "dates" ] }
+env_logger = "0.7.1"

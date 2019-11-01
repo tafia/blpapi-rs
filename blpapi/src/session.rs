@@ -1,6 +1,5 @@
 use crate::{
     correlation_id::CorrelationId,
-    datetime::Datetime,
     element::Element,
     event::{Event, EventType},
     name::Name,
@@ -490,7 +489,7 @@ pub struct TimeSerie<R> {
 #[derive(Default)]
 #[cfg(not(feature = "dates"))]
 pub struct TimeSerie<R> {
-    pub dates: Vec<Datetime>,
+    pub dates: Vec<crate::datetime::Datetime>,
     pub values: Vec<R>,
 }
 

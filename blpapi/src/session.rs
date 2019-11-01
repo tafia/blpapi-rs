@@ -310,37 +310,35 @@ impl SessionSync {
                 // send request
                 for event in self.send(request, None)? {
                     for message in event?.messages().map(|m| m.element()) {
-                        if let Some(securities) = message.get_named_element(&security_data) {
-                            for security in securities.values::<Element>() {
-                                let ticker = security
-                                    .get_named_element(&security_name)
-                                    .and_then(|s| s.get_at(0))
-                                    .unwrap_or_else(|| String::new());
-                                if security.has_named_element(&security_error) {
-                                    break;
-                                }
-                                if let Some(fields) = security.get_named_element(&field_data) {
-                                    let entry = ref_data.entry(ticker).or_insert_with(|| {
-                                        let len = fields.num_values();
-                                        TimeSerie::<_>::with_capacity(len)
-                                    });
-                                    for points in fields.values::<Element>() {
-                                        let mut value = R::default();
-                                        for field in points.elements() {
-                                            let name = &field.string_name();
-                                            if name == "date" {
-                                                #[cfg(feature = "dates")]
-                                                entry
-                                                    .dates
-                                                    .extend(field.get_at::<chrono::NaiveDate>(0));
-                                                #[cfg(not(feature = "dates"))]
-                                                entry.dates.extend(field.get_at(0));
-                                            } else {
-                                                value.on_field(name, &field);
-                                            }
+                        if let Some(security) = message.get_named_element(&security_data) {
+                            let ticker = security
+                                .get_named_element(&security_name)
+                                .and_then(|s| s.get_at(0))
+                                .unwrap_or_else(|| String::new());
+                            if security.has_named_element(&security_error) {
+                                break;
+                            }
+                            if let Some(fields) = security.get_named_element(&field_data) {
+                                let entry = ref_data.entry(ticker).or_insert_with(|| {
+                                    let len = fields.num_values();
+                                    TimeSerie::<_>::with_capacity(len)
+                                });
+                                for points in fields.values::<Element>() {
+                                    let mut value = R::default();
+                                    for field in points.elements() {
+                                        let name = &field.string_name();
+                                        if name == "date" {
+                                            #[cfg(feature = "dates")]
+                                            entry
+                                                .dates
+                                                .extend(field.get_at::<chrono::NaiveDate>(0));
+                                            #[cfg(not(feature = "dates"))]
+                                            entry.dates.extend(field.get_at(0));
+                                        } else {
+                                            value.on_field(name, &field);
                                         }
-                                        entry.values.push(value);
                                     }
+                                    entry.values.push(value);
                                 }
                             }
                         }

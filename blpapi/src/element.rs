@@ -361,10 +361,10 @@ impl<'a> SetValue for &'a str {
 impl GetValue for Datetime {
     fn get_at(element: &Element, index: usize) -> Option<Self> {
         unsafe {
-            let tmp = ptr::null_mut();
-            let res = blpapi_Element_getValueAsDatetime(element.ptr, tmp, index);
+            let mut tmp = Datetime::default();
+            let res = blpapi_Element_getValueAsDatetime(element.ptr, &mut tmp.0, index);
             if res == 0 {
-                Some(Datetime(*tmp))
+                Some(tmp)
             } else {
                 None
             }

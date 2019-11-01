@@ -1,4 +1,7 @@
-use blpapi::{session::{SessionSync, HistOptions}, Error, RefData};
+use blpapi::{
+    session::{HistOptions, SessionSync},
+    Error, RefData,
+};
 
 #[derive(Debug, Default, RefData)]
 struct Data {
@@ -25,7 +28,9 @@ pub fn main() -> Result<(), Error> {
 
     let options = HistOptions::new("20190101", "20191010");
     let data = session.hist_data::<_, Data>(securities, options)?;
-    println!("{:#?}", data);
+    for (sec, timeserie) in data {
+        println!("{}: {:?}", sec, timeserie.dates);
+    }
 
     Ok(())
 }

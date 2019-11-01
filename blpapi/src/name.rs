@@ -56,7 +56,7 @@ impl PartialEq<Name> for Name {
 
 impl std::string::ToString for Name {
     fn to_string(&self) -> String {
-        unsafe { 
+        unsafe {
             let ptr = blpapi_Name_string(self.0);
             CStr::from_ptr(ptr).to_string_lossy().into_owned()
         }

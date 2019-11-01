@@ -43,7 +43,8 @@ impl Request {
 
     /// Append a new value to the existing inner Element sequence defined by name
     pub fn append_named<V: SetValue>(&mut self, name: &Name, value: V) -> Result<(), Error> {
-        self.element().get_named_element(name)
+        self.element()
+            .get_named_element(name)
             .ok_or(Error(0))?
             .append(value)
     }

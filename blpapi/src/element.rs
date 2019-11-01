@@ -9,11 +9,10 @@ use std::{
 
 /// An element
 pub struct Element {
-    pub(crate) ptr: *mut blpapi_Element_t
+    pub(crate) ptr: *mut blpapi_Element_t,
 }
 
 impl Element {
-
     unsafe fn opt(res: c_int, ptr: *mut blpapi_Element_t) -> Option<Self> {
         if res == 0 {
             Some(Element { ptr })
@@ -24,9 +23,14 @@ impl Element {
     }
 
     /// name
-    pub fn name(&self) -> String {
+    pub fn string_name(&self) -> String {
+        self.name().to_string_lossy().into_owned()
+    }
+
+    /// name
+    pub fn name(&self) -> Name {
         let name = unsafe { blpapi_Element_name(self.ptr) };
-        Name(name).to_string_lossy().into_owned()
+        Name(name)
     }
 
     /// Has element
@@ -71,8 +75,12 @@ impl Element {
     pub fn get_named_element(&self, named_element: &Name) -> Option<Element> {
         unsafe {
             let mut element = ptr::null_mut();
-            let res =
-                blpapi_Element_getElement(self.ptr, &mut element as *mut _, ptr::null(), named_element.0);
+            let res = blpapi_Element_getElement(
+                self.ptr,
+                &mut element as *mut _,
+                ptr::null(),
+                named_element.0,
+            );
             Element::opt(res, element)
         }
     }
@@ -330,8 +338,12 @@ impl<'a> SetValue for &'a str {
         unsafe {
             let named_element = ptr::null();
             let name = CString::new(name).unwrap();
-            let res =
-                blpapi_Element_setElementString(element.ptr, name.as_ptr(), named_element, value.as_ptr());
+            let res = blpapi_Element_setElementString(
+                element.ptr,
+                name.as_ptr(),
+                named_element,
+                value.as_ptr(),
+            );
             try_(res)
         }
     }
@@ -339,7 +351,8 @@ impl<'a> SetValue for &'a str {
         let value = CString::new(self).unwrap();
         unsafe {
             let name = ptr::null();
-            let res = blpapi_Element_setElementString(element.ptr, name, named_element.0, value.as_ptr());
+            let res =
+                blpapi_Element_setElementString(element.ptr, name, named_element.0, value.as_ptr());
             try_(res)
         }
     }
@@ -445,6 +458,15 @@ impl<'a, V: GetValue> Iterator for Values<'a, V> {
         let v = self.element.get_at(self.i);
         self.i += 1;
         v
+    }
+}
+
+#[cfg(feature = "dates")]
+impl GetValue for chrono::NaiveDate {
+    fn get_at(element: &Element, index: usize) -> Option<Self> {
+        element.get_at(index).map(|d: Datetime| {
+            chrono::NaiveDate::from_ymd(d.0.year as i32, d.0.month as u32, d.0.day as u32)
+        })
     }
 }
 

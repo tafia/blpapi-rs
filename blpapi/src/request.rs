@@ -2,7 +2,7 @@ use crate::{
     element::{Element, SetValue},
     name::Name,
     service::Service,
-    try_, Error,
+    Error,
 };
 use blpapi_sys::*;
 use std::ffi::CString;
@@ -24,7 +24,7 @@ impl Request {
             let mut ptr = std::ptr::null_mut();
             let refptr = &mut ptr as *mut _;
             let res = blpapi_Service_createRequest(service.0, refptr, operation.as_ptr());
-            try_(res)?;
+            Error::check(res)?;
             let elements = blpapi_Request_elements(ptr);
             Ok(Request { ptr, elements })
         }

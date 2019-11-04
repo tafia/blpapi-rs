@@ -7,7 +7,7 @@ use crate::{
     request::Request,
     service::Service,
     session_options::SessionOptions,
-    try_, Error,
+    Error,
 };
 use blpapi_sys::*;
 use std::collections::HashMap;
@@ -42,20 +42,20 @@ impl Session {
     /// Start the session
     pub fn start(&mut self) -> Result<(), Error> {
         let res = unsafe { blpapi_Session_start(self.ptr) };
-        try_(res)
+        Error::check(res)
     }
 
     /// Stop the session
     pub fn stop(&mut self) -> Result<(), Error> {
         let res = unsafe { blpapi_Session_stop(self.ptr) };
-        try_(res)
+        Error::check(res)
     }
 
     /// Open service
     pub fn open_service(&mut self, service: &str) -> Result<(), Error> {
         let service = CString::new(service).unwrap();
         let res = unsafe { blpapi_Session_openService(self.ptr, service.as_ptr()) };
-        try_(res)
+        Error::check(res)
     }
 
     /// Get opened service
@@ -64,7 +64,7 @@ impl Session {
         let mut service = ptr::null_mut();
         let res =
             unsafe { blpapi_Session_getService(self.ptr, &mut service as *mut _, name.as_ptr()) };
-        try_(res)?;
+        Error::check(res)?;
         Ok(Service(service))
     }
 
@@ -89,7 +89,7 @@ impl Session {
                 request_label,
                 request_label_len,
             );
-            try_(res)?;
+            Error::check(res)?;
             Ok(correlation_id)
         }
     }
@@ -140,7 +140,7 @@ impl SessionSync {
         let timeout = timeout_ms.unwrap_or(0);
         unsafe {
             let res = blpapi_Session_nextEvent(self.0.ptr, &mut event as *mut _, timeout);
-            try_(res)?;
+            Error::check(res)?;
             Ok(Event(event))
         }
     }

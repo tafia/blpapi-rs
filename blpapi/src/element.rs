@@ -1,4 +1,4 @@
-use crate::{datetime::Datetime, name::Name, try_, Error};
+use crate::{datetime::Datetime, name::Name, Error};
 use blpapi_sys::*;
 use std::{
     ffi::{CStr, CString},
@@ -98,7 +98,7 @@ impl Element {
     pub fn append_element(&mut self) -> Result<Element, Error> {
         unsafe {
             let mut ptr = ptr::null_mut();
-            try_(blpapi_Element_appendElement(self.ptr, &mut ptr as *mut _))?;
+            Error::check(blpapi_Element_appendElement(self.ptr, &mut ptr as *mut _))?;
             Ok(Element { ptr })
         }
     }
@@ -199,7 +199,7 @@ macro_rules! impl_value {
             fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
                 unsafe {
                     let res = $set_at(element.ptr, self, index);
-                    try_(res)
+                    Error::check(res)
                 }
             }
             fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
@@ -207,14 +207,14 @@ macro_rules! impl_value {
                     let named_element = ptr::null();
                     let name = CString::new(name).unwrap();
                     let res = $set(element.ptr, name.as_ptr(), named_element, self);
-                    try_(res)
+                    Error::check(res)
                 }
             }
             fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
                 unsafe {
                     let name = ptr::null();
                     let res = $set(element.ptr, name, named_element.0, self);
-                    try_(res)
+                    Error::check(res)
                 }
             }
         }
@@ -237,7 +237,7 @@ macro_rules! impl_value {
             fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
                 unsafe {
                     let res = $set_at(element.ptr, $to_bbg(self), index);
-                    try_(res)
+                    Error::check(res)
                 }
             }
             fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
@@ -245,14 +245,14 @@ macro_rules! impl_value {
                     let named_element = ptr::null();
                     let name = CString::new(name).unwrap();
                     let res = $set(element.ptr, name.as_ptr(), named_element, $to_bbg(self));
-                    try_(res)
+                    Error::check(res)
                 }
             }
             fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
                 unsafe {
                     let name = ptr::null();
                     let res = $set(element.ptr, name, named_element.0, $to_bbg(self));
-                    try_(res)
+                    Error::check(res)
                 }
             }
         }
@@ -330,7 +330,7 @@ impl<'a> SetValue for &'a str {
         let value = CString::new(self).unwrap();
         unsafe {
             let res = blpapi_Element_setValueString(element.ptr, value.as_ptr(), index);
-            try_(res)
+            Error::check(res)
         }
     }
     fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
@@ -344,7 +344,7 @@ impl<'a> SetValue for &'a str {
                 named_element,
                 value.as_ptr(),
             );
-            try_(res)
+            Error::check(res)
         }
     }
     fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
@@ -353,7 +353,7 @@ impl<'a> SetValue for &'a str {
             let name = ptr::null();
             let res =
                 blpapi_Element_setElementString(element.ptr, name, named_element.0, value.as_ptr());
-            try_(res)
+            Error::check(res)
         }
     }
 }
@@ -408,7 +408,7 @@ impl<'a> SetValue for &'a Datetime {
     fn set_at(self, element: &mut Element, index: usize) -> Result<(), Error> {
         unsafe {
             let res = blpapi_Element_setValueDatetime(element.ptr, &self.0 as *const _, index);
-            try_(res)
+            Error::check(res)
         }
     }
     fn set(self, element: &mut Element, name: &str) -> Result<(), Error> {
@@ -421,7 +421,7 @@ impl<'a> SetValue for &'a Datetime {
                 named_element,
                 &self.0 as *const _,
             );
-            try_(res)
+            Error::check(res)
         }
     }
     fn set_named(self, element: &mut Element, named_element: &Name) -> Result<(), Error> {
@@ -433,7 +433,7 @@ impl<'a> SetValue for &'a Datetime {
                 named_element.0,
                 &self.0 as *const _,
             );
-            try_(res)
+            Error::check(res)
         }
     }
 }

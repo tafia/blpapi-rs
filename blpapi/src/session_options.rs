@@ -1,4 +1,4 @@
-use crate::{session::SessionSync, try_, Error};
+use crate::{session::SessionSync, Error};
 use blpapi_sys::*;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_int;
@@ -28,7 +28,7 @@ impl SessionOptions {
     /// Get client mode
     pub fn client_mode(&self) -> Result<ClientMode, Error> {
         let mode = unsafe { blpapi_SessionOptions_clientMode(self.0) };
-        try_(mode)?;
+        Error::check(mode)?;
         match mode as u32 {
             BLPAPI_CLIENTMODE_AUTO => Ok(ClientMode::Auto),
             BLPAPI_CLIENTMODE_DAPI => Ok(ClientMode::DApi),
@@ -61,7 +61,7 @@ impl SessionOptions {
     pub fn with_server_host(self, host: &str) -> Result<Self, Error> {
         let chost = CString::new(host).unwrap();
         let res = unsafe { blpapi_SessionOptions_setServerHost(self.0, chost.as_ptr()) };
-        try_(res)?;
+        Error::check(res)?;
         Ok(self)
     }
 
@@ -73,7 +73,7 @@ impl SessionOptions {
     /// Set server port
     pub fn with_server_port(self, port: u16) -> Result<Self, Error> {
         let res = unsafe { blpapi_SessionOptions_setServerPort(self.0, port) };
-        try_(res)?;
+        Error::check(res)?;
         Ok(self)
     }
 

@@ -219,8 +219,8 @@ impl SessionSync {
                                     .get_named_element(&security_name)
                                     .and_then(|s| s.get_at(0))
                                     .unwrap_or_else(|| String::new());
-                                if security.has_named_element(&security_error) {
-                                    break;
+                                if let Some(error) = security.get_named_element(&security_error) {
+                                    return Err(Error::security(ticker, error));
                                 }
                                 let entry = ref_data.entry(ticker).or_default();
                                 if let Some(fields) = security.get_named_element(&field_data) {
@@ -404,6 +404,7 @@ impl<'a> Events<'a> {
                         return Ok(None);
                     }
                 }
+                EventType::Timeout => return Err(Error::TimeOut),
                 _ => (),
             }
         }

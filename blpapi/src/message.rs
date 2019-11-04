@@ -58,13 +58,6 @@ impl<'a> Message<'a> {
     }
 }
 
-//impl<'a> std::ops::Deref for Message<'a> {
-//    type Target = Element;
-//    fn deref(&self) -> &Element {
-//        unsafe { &Element { ptr: self.elements } }
-//    }
-//}
-
 //TODO:
 //check if we must release it.
 //from the doc, it appears that messages are reference counted (when cloned) and

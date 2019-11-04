@@ -34,7 +34,7 @@ impl SessionOptions {
             BLPAPI_CLIENTMODE_DAPI => Ok(ClientMode::DApi),
             BLPAPI_CLIENTMODE_SAPI => Ok(ClientMode::SApi),
             BLPAPI_CLIENTMODE_COMPAT_33X => Ok(ClientMode::Compat33X),
-            _ => Err(Error(mode)),
+            _ => Err(Error::Generic(mode)),
         }
     }
 

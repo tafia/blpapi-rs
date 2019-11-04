@@ -426,9 +426,9 @@ pub struct HistOptions {
     /// end date yyyyMMdd
     pub end_date: String,
     /// periodicity_adjustment (ACTUAL...)
-    pub periodicity_adjustment: Option<String>,
+    pub periodicity_adjustment: Option<PeriodicityAdjustment>,
     /// periodicity_selection (DAILY, MONTHLY, QUARTERLY, SEMIANNUALLY, ANNUALLY)
-    pub periodicity_selection: Option<String>,
+    pub periodicity_selection: Option<PeriodicitySelection>,
     /// max_data_points
     pub max_data_points: Option<i32>,
 }
@@ -444,13 +444,19 @@ impl HistOptions {
     }
 
     /// Set periodicity_adjustment
-    pub fn with_periodicity_adjustment(mut self, periodicity_adjustment: String) -> Self {
+    pub fn with_periodicity_adjustment(
+        mut self,
+        periodicity_adjustment: PeriodicityAdjustment,
+    ) -> Self {
         self.periodicity_adjustment = Some(periodicity_adjustment);
         self
     }
 
     /// Set periodicity_adjustment
-    pub fn with_periodicity_selection(mut self, periodicity_selection: String) -> Self {
+    pub fn with_periodicity_selection(
+        mut self,
+        periodicity_selection: PeriodicitySelection,
+    ) -> Self {
         self.periodicity_selection = Some(periodicity_selection);
         self
     }
@@ -466,10 +472,10 @@ impl HistOptions {
         element.set("startDate", &self.start_date[..])?;
         element.set("endDate", &self.end_date[..])?;
         if let Some(periodicity_selection) = &self.periodicity_selection {
-            element.set("periodicitySelection", &periodicity_selection[..])?;
+            element.set("periodicitySelection", periodicity_selection.as_str())?;
         }
         if let Some(periodicity_adjustment) = &self.periodicity_adjustment {
-            element.set("periodicityAdjustment", &periodicity_adjustment[..])?;
+            element.set("periodicityAdjustment", periodicity_adjustment.as_str())?;
         }
         if let Some(max_data_points) = self.max_data_points {
             element.set("maxDataPoints", max_data_points)?;
@@ -498,6 +504,50 @@ impl<R> TimeSerie<R> {
         TimeSerie {
             dates: Vec::with_capacity(capacity),
             values: Vec::with_capacity(capacity),
+        }
+    }
+}
+
+/// Periodicity Adjustment
+#[derive(Debug, Clone, Copy)]
+pub enum PeriodicityAdjustment {
+    Actual,
+    Calendar,
+    Fiscal,
+}
+
+impl PeriodicityAdjustment {
+    /// Get str value for periodicity selection
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            PeriodicityAdjustment::Actual => "ACTUAL",
+            PeriodicityAdjustment::Calendar => "CALENDAR",
+            PeriodicityAdjustment::Fiscal => "FISCAL",
+        }
+    }
+}
+
+/// Periodicity Selection
+#[derive(Debug, Clone, Copy)]
+pub enum PeriodicitySelection {
+    Daily,
+    Weekly,
+    Monthly,
+    Quarterly,
+    SemiAnnually,
+    Yearly,
+}
+
+impl PeriodicitySelection {
+    /// Get str value for periodicity selection
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            PeriodicitySelection::Daily => "DAILY",
+            PeriodicitySelection::Weekly => "WEEKLY",
+            PeriodicitySelection::Monthly => "MONTHLY",
+            PeriodicitySelection::Quarterly => "QUARTERLY",
+            PeriodicitySelection::SemiAnnually => "SEMIANNUALLY",
+            PeriodicitySelection::Yearly => "YEARLY",
         }
     }
 }

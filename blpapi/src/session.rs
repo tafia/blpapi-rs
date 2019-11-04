@@ -422,15 +422,17 @@ impl<'a> Iterator for Events<'a> {
 #[derive(Debug, Default)]
 pub struct HistOptions {
     /// Start date yyyyMMdd
-    pub start_date: String,
+    start_date: String,
     /// end date yyyyMMdd
-    pub end_date: String,
+    end_date: String,
     /// periodicity_adjustment (ACTUAL...)
-    pub periodicity_adjustment: Option<PeriodicityAdjustment>,
+    periodicity_adjustment: Option<PeriodicityAdjustment>,
     /// periodicity_selection (DAILY, MONTHLY, QUARTERLY, SEMIANNUALLY, ANNUALLY)
-    pub periodicity_selection: Option<PeriodicitySelection>,
+    periodicity_selection: Option<PeriodicitySelection>,
     /// max_data_points
-    pub max_data_points: Option<i32>,
+    max_data_points: Option<i32>,
+    /// Amends the value from local currency of the security to the desired currency.
+    currency: Option<String>,
 }
 
 impl HistOptions {
@@ -467,33 +469,37 @@ impl HistOptions {
         self
     }
 
+    /// Amends the value from local currency of the security to the desired currency.
+    pub fn with_currency(mut self, currency: String) -> Self {
+        self.currency = Some(currency);
+        self
+    }
+
     fn apply(&self, request: &mut Request) -> Result<(), Error> {
         let mut element = request.element();
         element.set("startDate", &self.start_date[..])?;
         element.set("endDate", &self.end_date[..])?;
-        if let Some(periodicity_selection) = &self.periodicity_selection {
+        if let Some(periodicity_selection) = self.periodicity_selection {
             element.set("periodicitySelection", periodicity_selection.as_str())?;
         }
-        if let Some(periodicity_adjustment) = &self.periodicity_adjustment {
+        if let Some(periodicity_adjustment) = self.periodicity_adjustment {
             element.set("periodicityAdjustment", periodicity_adjustment.as_str())?;
         }
         if let Some(max_data_points) = self.max_data_points {
             element.set("maxDataPoints", max_data_points)?;
+        }
+        if let Some(currency) = self.currency.as_ref() {
+            element.set("currency", &**currency)?;
         }
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-#[cfg(feature = "dates")]
 pub struct TimeSerie<R> {
+    #[cfg(feature = "dates")]
     pub dates: Vec<chrono::NaiveDate>,
-    pub values: Vec<R>,
-}
-
-#[derive(Default)]
-#[cfg(not(feature = "dates"))]
-pub struct TimeSerie<R> {
+    #[cfg(not(feature = "dates"))]
     pub dates: Vec<crate::datetime::Datetime>,
     pub values: Vec<R>,
 }

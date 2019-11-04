@@ -60,3 +60,26 @@ impl From<c_int> for DatetimeParts {
 pub fn is_leap_year(y: c_int) -> bool {
     y % 4 == 0 && (y <= 1752 || y % 100 != 0 || y % 400 == 0)
 }
+
+impl std::fmt::Debug for Datetime {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let d = self.0;
+        match (
+            d.year,
+            d.month,
+            d.day,
+            d.hours,
+            d.minutes,
+            d.seconds,
+            d.milliSeconds,
+        ) {
+            (y, m, d, 0, 0, 0, 0) => write!(f, "{:04}-{:02}-{:02}", y, m, d),
+            (0, 0, 0, h, mm, s, ms) => write!(f, "{:02}:{:02}:{:02}.{:03}", h, mm, s, ms),
+            (y, m, d, h, mm, s, ms) => write!(
+                f,
+                "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}",
+                y, m, d, h, mm, s, ms
+            ),
+        }
+    }
+}

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Service","A `Service` created from a `Session::get_service`"]]});

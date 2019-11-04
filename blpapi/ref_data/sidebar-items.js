@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["RefData","A trait to convert reference data element fields into a struct"]]});

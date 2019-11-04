@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["MessageIterator","A message iterator"]]});

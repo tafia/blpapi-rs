@@ -12,7 +12,7 @@ use std::os::raw::c_int;
 /// ```
 /// use blpapi::session_options::SessionOptions;
 ///
-/// let session = SessionOptions::new()
+/// let session = SessionOptions::default()
 ///     .with_server_host("localhost").unwrap()
 ///     .with_server_port(8194).unwrap()
 ///     .sync();
@@ -20,11 +20,6 @@ use std::os::raw::c_int;
 pub struct SessionOptions(pub(crate) *mut blpapi_SessionOptions_t);
 
 impl SessionOptions {
-    /// Create a new SessionOptions
-    pub fn new() -> Self {
-        unsafe { SessionOptions(blpapi_SessionOptions_create()) }
-    }
-
     /// Get client mode
     pub fn client_mode(&self) -> Result<ClientMode, Error> {
         let mode = unsafe { blpapi_SessionOptions_clientMode(self.0) };
@@ -91,11 +86,17 @@ impl Drop for SessionOptions {
 
 impl Clone for SessionOptions {
     fn clone(&self) -> Self {
-        let cloned = SessionOptions::new();
+        let cloned = SessionOptions::default();
         unsafe {
             blpapi_SessionOptions_copy(self.0, cloned.0);
         }
         cloned
+    }
+}
+
+impl Default for SessionOptions {
+    fn default() -> Self {
+        unsafe { SessionOptions(blpapi_SessionOptions_create()) }
     }
 }
 
@@ -119,7 +120,7 @@ mod tests {
     #[test]
     fn test_server_host() {
         let host = "localhost";
-        let options = SessionOptions::new().with_server_host(host).unwrap();
+        let options = SessionOptions::default().with_server_host(host).unwrap();
         assert_eq!(host, options.server_host());
         let session = options.sync();
     }

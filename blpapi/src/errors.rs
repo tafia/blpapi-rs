@@ -66,12 +66,12 @@ impl Error {
         let category = element
             .get_element("category")
             .and_then(|e| e.get_at(0))
-            .unwrap_or_else(|| String::new());
+            .unwrap_or_else(String::new);
         let sub_category = element.get_element("subcategory").and_then(|e| e.get_at(0));
         let message = element
             .get_element("message")
             .and_then(|e| e.get_at(0))
-            .unwrap_or_else(|| String::new());
+            .unwrap_or_else(String::new);
         Error::Security {
             security,
             category,

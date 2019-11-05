@@ -1,8 +1,24 @@
 use blpapi_sys::*;
 use std::ffi::{CStr, CString};
 
+lazy_static::lazy_static! {
+    pub static ref SECURITY_DATA: Name = Name::new("securityData");
+    pub static ref SECURITY_NAME: Name = Name::new("security");
+    pub static ref FIELD_DATA: Name = Name::new("fieldData");
+    pub static ref SECURITY_ERROR: Name = Name::new("securityError");
+    pub static ref SECURITIES: Name = Name::new("securities");
+    pub static ref FIELDS_NAME: Name = Name::new("fields");
+    pub static ref SESSION_TERMINATED: Name = Name::new("SesssionTerminated");
+    pub static ref SESSION_STARTUP_FAILURE: Name = Name::new("SessionStartupFailure");
+}
+
 /// A `Name`
 pub struct Name(pub(crate) *mut blpapi_Name_t);
+
+// As per bloomberg documentation:
+// *Each Name instance refers to an entry in a global static table* thus Name is `Sync`
+// https://bloomberg.github.io/blpapi-docs/dotnet/3.12/html/T_Bloomberglp_Blpapi_Name.htm
+unsafe impl Sync for Name {}
 
 impl Name {
     /// Create a new name

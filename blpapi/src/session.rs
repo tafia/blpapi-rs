@@ -2,7 +2,7 @@ use crate::{
     correlation_id::CorrelationId,
     element::Element,
     event::{Event, EventType},
-    name::Name,
+    name,
     ref_data::RefData,
     request::Request,
     service::Service,
@@ -118,7 +118,7 @@ impl SessionSync {
 
     /// Create a new `SessionSync` with default options and open refdata service
     pub fn new() -> Result<Self, Error> {
-        let mut session = Self::from_options(SessionOptions::new());
+        let mut session = Self::from_options(SessionOptions::default());
         session.start()?;
         session.open_service("//blp/refdata")?;
         Ok(session)
@@ -181,14 +181,6 @@ impl SessionSync {
         let mut ref_data: HashMap<String, R> = HashMap::new();
         let mut iter = securities.into_iter();
 
-        // TODO: should be consts
-        let security_data = Name::new("securityData");
-        let security_name = Name::new("security");
-        let field_data = Name::new("fieldData");
-        let security_error = Name::new("securityError");
-        let securities = Name::new("securities");
-        let fields_name = Name::new("fields");
-
         // split request as necessary to comply with bloomberg size limitations
         for fields in R::FIELDS.chunks(MAX_REFDATA_FIELDS) {
             loop {
@@ -198,7 +190,7 @@ impl SessionSync {
                 // add next batch of securities and exit loop if empty
                 let mut is_empty = true;
                 for security in iter.by_ref().take(MAX_PENDING_REQUEST / fields.len()) {
-                    request.append_named(&securities, security.as_ref())?;
+                    request.append_named(&name::SECURITIES, security.as_ref())?;
                     is_empty = false;
                 }
                 if is_empty {
@@ -207,23 +199,26 @@ impl SessionSync {
 
                 // add fields
                 for field in fields {
-                    request.append_named(&fields_name, *field)?;
+                    request.append_named(&name::FIELDS_NAME, *field)?;
                 }
 
                 // send request
                 for event in self.send(request, None)? {
                     for message in event?.messages().map(|m| m.element()) {
-                        if let Some(securities) = message.get_named_element(&security_data) {
+                        if let Some(securities) = message.get_named_element(&name::SECURITY_DATA) {
                             for security in securities.values::<Element>() {
                                 let ticker = security
-                                    .get_named_element(&security_name)
+                                    .get_named_element(&name::SECURITY_NAME)
                                     .and_then(|s| s.get_at(0))
-                                    .unwrap_or_else(|| String::new());
-                                if let Some(error) = security.get_named_element(&security_error) {
+                                    .unwrap_or_else(String::new);
+                                if let Some(error) =
+                                    security.get_named_element(&name::SECURITY_ERROR)
+                                {
                                     return Err(Error::security(ticker, error));
                                 }
                                 let entry = ref_data.entry(ticker).or_default();
-                                if let Some(fields) = security.get_named_element(&field_data) {
+                                if let Some(fields) = security.get_named_element(&name::FIELD_DATA)
+                                {
                                     for field in fields.elements() {
                                         entry.on_field(&field.string_name(), &field);
                                     }
@@ -276,14 +271,6 @@ impl SessionSync {
         let mut ref_data: HashMap<String, TimeSerie<R>> = HashMap::new();
         let mut iter = securities.into_iter();
 
-        // TODO: should be consts
-        let security_data = Name::new("securityData");
-        let security_name = Name::new("security");
-        let field_data = Name::new("fieldData");
-        let security_error = Name::new("securityError");
-        let securities = Name::new("securities");
-        let fields_name = Name::new("fields");
-
         // split request as necessary to comply with bloomberg size limitations
         for fields in R::FIELDS.chunks(MAX_HISTDATA_FIELDS) {
             loop {
@@ -293,7 +280,7 @@ impl SessionSync {
                 // add next batch of securities and exit loop if empty
                 let mut is_empty = true;
                 for security in iter.by_ref().take(MAX_PENDING_REQUEST / fields.len()) {
-                    request.append_named(&securities, security.as_ref())?;
+                    request.append_named(&name::SECURITIES, security.as_ref())?;
                     is_empty = false;
                 }
                 if is_empty {
@@ -302,7 +289,7 @@ impl SessionSync {
 
                 // add fields
                 for field in fields {
-                    request.append_named(&fields_name, *field)?;
+                    request.append_named(&name::FIELDS_NAME, *field)?;
                 }
 
                 options.apply(&mut request)?;
@@ -310,15 +297,15 @@ impl SessionSync {
                 // send request
                 for event in self.send(request, None)? {
                     for message in event?.messages().map(|m| m.element()) {
-                        if let Some(security) = message.get_named_element(&security_data) {
+                        if let Some(security) = message.get_named_element(&name::SECURITY_DATA) {
                             let ticker = security
-                                .get_named_element(&security_name)
+                                .get_named_element(&name::SECURITY_NAME)
                                 .and_then(|s| s.get_at(0))
                                 .unwrap_or_else(|| String::new());
-                            if security.has_named_element(&security_error) {
+                            if security.has_named_element(&name::SECURITY_ERROR) {
                                 break;
                             }
-                            if let Some(fields) = security.get_named_element(&field_data) {
+                            if let Some(fields) = security.get_named_element(&name::FIELD_DATA) {
                                 let entry = ref_data.entry(ticker).or_insert_with(|| {
                                     let len = fields.num_values();
                                     TimeSerie::<_>::with_capacity(len)
@@ -367,18 +354,12 @@ impl std::ops::DerefMut for SessionSync {
 pub struct Events<'a> {
     session: &'a mut SessionSync,
     exit: bool,
-    session_terminated: Name,
-    session_startup_failure: Name,
 }
 
 impl<'a> Events<'a> {
     fn new(session: &'a mut SessionSync) -> Self {
-        let session_terminated = Name::new("SesssionTerminated");
-        let session_startup_failure = Name::new("SessionStartupFailure");
         Events {
             session,
-            session_startup_failure,
-            session_terminated,
             exit: false,
         }
     }
@@ -396,11 +377,9 @@ impl<'a> Events<'a> {
                     return Ok(Some(event));
                 }
                 EventType::SessionStatus => {
-                    if event
-                        .messages()
-                        .map(|m| m.message_type())
-                        .any(|m| m == self.session_terminated || m == self.session_startup_failure)
-                    {
+                    if event.messages().map(|m| m.message_type()).any(|m| {
+                        m == *name::SESSION_TERMINATED || m == *name::SESSION_STARTUP_FAILURE
+                    }) {
                         return Ok(None);
                     }
                 }
@@ -524,7 +503,7 @@ pub enum PeriodicityAdjustment {
 
 impl PeriodicityAdjustment {
     /// Get str value for periodicity selection
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             PeriodicityAdjustment::Actual => "ACTUAL",
             PeriodicityAdjustment::Calendar => "CALENDAR",
@@ -546,7 +525,7 @@ pub enum PeriodicitySelection {
 
 impl PeriodicitySelection {
     /// Get str value for periodicity selection
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             PeriodicitySelection::Daily => "DAILY",
             PeriodicitySelection::Weekly => "WEEKLY",
@@ -564,7 +543,7 @@ mod tests {
 
     #[test]
     fn send_request() -> Result<(), Error> {
-        let mut session = SessionOptions::new()
+        let mut session = SessionOptions::default()
             .with_server_host("localhost")?
             .with_server_port(8194)?
             .sync();

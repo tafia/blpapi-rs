@@ -70,10 +70,7 @@ impl<'a> Message<'a> {
 //}
 
 //pub enum RecapType {
-//None = BLPAPI_MESSAGE_RECAPTYPE_NONE,
-//Solicited = BLPAPI_MESSAGE_RECAPTYPE_SOLICITED,
-//Unsolicited = BLPAPI_MESSAGE_RECAPTYPE_UNSOLICITED }
-//
+//    None = BLPAPI_MESSAGE_RECAPTYPE_NONE,
+//    Solicited = BLPAPI_MESSAGE_RECAPTYPE_SOLICITED,
+//    Unsolicited = BLPAPI_MESSAGE_RECAPTYPE_UNSOLICITED }
 //}
-//
-//impl From

@@ -1,4 +1,6 @@
 fn main() {
+    //TODO: use pkg-config to search in system lib dirs instead of
+    //only relying on env variable
     let lib_dir = std::env::var("BLPAPI_LIB").expect(r#"Error while building blpapi-sys.
     
     Cannot find 'BLPAPI_LIB' environment variable.

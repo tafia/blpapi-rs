@@ -3,6 +3,7 @@ name = "blpapi"
 version = "0.0.1"
 authors = ["Johann Tuffe <johann.tuffe@three-stones.com>"]
 edition = "2018"
+description = "Safe wrapper to bloomberg blpapi library"
 
 documentation = "https://docs.rs/blpapi"
 repository = "https://github.com/tafia/blpapi-rs"

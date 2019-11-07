@@ -9,7 +9,7 @@ documentation = "https://docs.rs/blpapi"
 repository = "https://github.com/tafia/blpapi-rs"
 
 readme = "../README.md"
-keywords = ["bloomberg", "bbg", "blpapi", "trading", "quant", "derive"]
+keywords = ["bloomberg", "blpapi", "trading", "derive"]
 categories = ["api-bindings"]
 license = "MIT"
 

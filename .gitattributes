@@ -1,0 +1,6 @@
+# Windows libraries
+*.[Dd][Ll][Ll] filter=lfs diff=lfs merge=lfs -text
+*.[Ll][Ii][Bb] filter=lfs diff=lfs merge=lfs -text
+
+# Linux libraries
+*.[Ss][Oo] filter=lfs diff=lfs merge=lfs -text
